@@ -1,0 +1,23 @@
+#!/bin/bash -xe
+
+FILENAME=$(curl -sSL https://bellard.org/quickjs/ | grep -oE 'quickjs-[0-9]{4}-[0-9]{2}-[0-9]{2}\.tar\.xz' | head -1)
+
+curl -sSL https://bellard.org/quickjs/$FILENAME |
+  tar xJfv - --strip-components=1 --wildcards '*.h' --wildcards '*.c' --wildcards '*/VERSION' \
+  --exclude '*examples*' --exclude '*test*' --exclude 'qjs*.c' --exclude 'quickjs-libc*' \
+  --exclude 'unicode_gen*'
+
+VERSION=$(cat VERSION)
+
+cat > version.h <<- EOM
+#ifndef _GUARD_H_PORT_H_
+#define _GUARD_H_PORT_H_
+
+#define CONFIG_VERSION "$VERSION"
+
+#endif
+EOM
+
+rm VERSION
+
+sed -i 's/#include/#include "version.h"\n#include/' quickjs.c
